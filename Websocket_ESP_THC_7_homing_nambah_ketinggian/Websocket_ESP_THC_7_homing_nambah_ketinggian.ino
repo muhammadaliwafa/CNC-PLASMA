@@ -16,6 +16,7 @@
 bool ledState = 0;
 const int ledPin = 2;
 int32_t batas_bawah = -6000;
+bool lsPlasma=false;
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -30,7 +31,7 @@ bool runFinish = false;
 String statusTHC="2";
 int V_Arc;
 bool en = false, en_cmd=false;
-int titik_nyala = 200, selisih = 10;
+int titik_nyala = 218, selisih = 10;
 int up_boundary;
 bool homing = false;
 void notifyClients() {
@@ -158,19 +159,24 @@ void loop() {
   uint32_t Tmr = millis();
   static int n;
   static int sum;
+
+
+
+  bool plsma = digitalRead(D1);
+  cekPlasma(plsma);
+  if(en_cmd||!plsma){
+    en = true;
+  }else{
+    en = false;
+  }
+  
   bool x = digitalRead(D7);
-//  Serial.println(x);
   if(!homing&&!digitalRead(D7)){
     homing=true;
     target = batas_bawah;
     digitalWrite(D2, HIGH);
   }
   
-  if(en_cmd||!digitalRead(D1)){
-    en = true;
-  }else{
-    en = false;
-  }
   
   if((Tmr-lsRn)>10){
     lsRn = Tmr;
@@ -213,7 +219,7 @@ void loop() {
       Serial.println("homing selesai");
       homing = false;
       currEncoder = -4000;
-      target=currEncoder+400;
+      target=currEncoder+300;
       digitalWrite(D2, LOW);
       delay(7);
       digitalWrite(D2, HIGH);
@@ -228,16 +234,17 @@ void loop() {
 
 }
 
-//void pulse_probe(){
-//  if(!pulse){
-//    return;
-//  }
-//  static uint32_t lsRn;
-//  uint32_t Tmr = millis();
-//  if((Tmr-lsRn)>500){
-//    
-//  }
-//}
+void cekPlasma(bool plsma){
+  if(!lsPlasma&&!plsma){//On ketika false, sebelumnya mati sekarang hidup
+    lsPlasma = true;
+    Serial.println("plasma hidup");
+  }else if(lsPlasma&&plsma){//sebelumnya hidup sekarang mati
+    lsPlasma = false;
+    target = -2000;
+    Serial.println("plasma mati, ngangkat sekarang");
+    Serial.println(target);
+  }
+}
 
 
 void putar(){
